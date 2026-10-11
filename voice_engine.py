@@ -61,7 +61,25 @@ EDGE_NEURAL_VOICES: Dict[str, str] = {
     "prabhat": "en-IN-PrabhatNeural",        # Indian English male
     "neerja": "en-IN-NeerjaExpressiveNeural",# Indian English expressive female
     "guy": "en-US-GuyNeural",                # Friendly American male
+    "hamdan": "ar-AE-HamdanNeural",          # Native UAE Emirati Arabic male
+    "fatima": "ar-AE-FatimaNeural",          # Native UAE Emirati Arabic female
+    "arabic": "ar-AE-HamdanNeural",          # UAE Arabic alias
 }
+
+
+def is_arabic(text: str) -> bool:
+    """Detect if text contains Arabic script or common Romanized Emirati/Gulf Arabic expressions."""
+    if not text:
+        return False
+    if re.search(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]", text):
+        return True
+    arabic_markers = {
+        "habibi", "yalla", "inshallah", "shukran", "marhaba", "hala", "wallah",
+        "khalas", "mabrook", "salam", "alaykum", "assalamu", "ahlan", "mashallah",
+        "hayyak", "tamam", "aywa", "naam", "intazir", "tawaqaf"
+    }
+    words = set(re.findall(r"\b[a-zA-Z]+\b", text.lower()))
+    return bool(words & arabic_markers)
 
 
 def is_hindi_or_hinglish(text: str) -> bool:
@@ -80,9 +98,22 @@ def is_hindi_or_hinglish(text: str) -> bool:
     return bool(words & hinglish_markers)
 
 
+is_hinglish = is_hindi_or_hinglish
+
+
+def detect_language_mode(text: str) -> str:
+    """Detect trilingual language code ('ar-AE', 'hi-IN', or 'en-US') for UAE/Global operations."""
+    if is_arabic(text):
+        return "ar-AE"
+    if is_hindi_or_hinglish(text):
+        return "hi-IN"
+    return "en-US"
+
+
 BARGE_IN_KEYWORDS = (
     "stop", "ruko", "chup", "pause", "wait", "hold on", "shant", "ek second",
-    "bas", "quiet", "shut up", "mat bolo", "ruk jao", "cancel"
+    "bas", "quiet", "shut up", "mat bolo", "ruk jao", "cancel",
+    "khalas", "tawaqaf", "intazir", "وقف", "خلاص", "انتظر"
 )
 
 
@@ -312,10 +343,13 @@ class VoiceEngine:
 
                     # 4. If not Gemini/OpenAI/VoiceStudio, try Edge-TTS Neural voice (Zero-credential fallback!)
                     if not played and curr_lower != "david":
-                        if "ryan" in curr_lower or "en-gb" in curr_lower:
+                        is_female_profile = any(k in curr_lower for k in ("female", "swara", "neerja", "sonia", "friday", "nova", "ava", "fatima"))
+                        if is_arabic(text):
+                            edge_voice = "ar-AE-FatimaNeural" if is_female_profile else "ar-AE-HamdanNeural"
+                        elif "ryan" in curr_lower or "en-gb" in curr_lower:
                             edge_voice = "hi-IN-MadhurNeural" if re.search(r"[\u0900-\u097f]", text) else "en-GB-RyanNeural"
                         elif is_hindi_or_hinglish(text):
-                            edge_voice = "hi-IN-SwaraNeural" if any(k in curr_lower for k in ("female", "swara", "neerja", "sonia", "friday", "nova", "ava")) else "hi-IN-MadhurNeural"
+                            edge_voice = "hi-IN-SwaraNeural" if is_female_profile else "hi-IN-MadhurNeural"
                         elif curr_lower in ("ultron", "onyx"):
                             edge_voice = "en-US-ChristopherNeural"
                         elif curr_lower in ("friday", "nova"):

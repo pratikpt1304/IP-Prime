@@ -1,15 +1,31 @@
 # ⚡ PRIME AI :: AUTONOMOUS NEURAL DESKTOP OPERATING SYSTEM
-> **[ Zero GUI · 24/7 Hands-Free Ambient Voice · Deep OS Dominion · Multi-Brain Failover · Karpathy-Standard Coder ]**  
-> *Engineered for Pratik Thorat (`thoratpratik2323-hue`)*
+> **[ 🏆 Dubai "Create AI Agents Championship" Edition · Trilingual Voice (`ar-AE` / `en-US` / `hi-IN`) · Zero-Leakage UAE DLP Shield · 2D Multi-Agent Office ]**  
+> *Engineered by Pratik Thorat (`pratikpt1304`)*
 
 [![Windows OS](https://img.shields.io/badge/OS-Windows_11_%2F_10-0078D6?style=for-the-badge&logo=windows)](https://microsoft.com)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Tests Passing](https://img.shields.io/badge/Tests-285%2B%20Passing%20(22%2F22%20Suites)-brightgreen?style=for-the-badge&logo=pytest)](https://github.com/thoratpratik2323-hue/prime-II1)
-[![Google Gemini](https://img.shields.io/badge/Google_Gemini-Flash--Lite_Latest-4285F4?style=for-the-badge&logo=google)](https://aistudio.google.com)
-[![Groq LPU](https://img.shields.io/badge/Groq-500+_Tokens/sec-F55036?style=for-the-badge&logo=fastapi)](https://groq.com)
-[![Voice Model](https://img.shields.io/badge/Voice-Brian_Multilingual_+28%25_Zero--Gap-blueviolet?style=for-the-badge)](https://github.com/thoratpratik2323-hue/prime-II1)
-[![Munder Difflin](https://img.shields.io/badge/Munder_Difflin-2D_Floor_%7C_Dots_Mailbox_%7C_Stapler-ff69b4?style=for-the-badge)](https://github.com/thoratpratik2323-hue/prime-II1)
-[![Agency Army](https://img.shields.io/badge/Agency_Agents-279_Specialists-orange?style=for-the-badge)](https://github.com/thoratpratik2323-hue/prime-II1)
+[![Tests Passing](https://img.shields.io/badge/Tests-300%2B%20Passing%20(23%2F23%20Suites)-brightgreen?style=for-the-badge&logo=pytest)](https://github.com/pratikpt1304/prime-dubai-championship)
+[![Dubai Championship](https://img.shields.io/badge/Dubai_Chamber-Create_AI_Agents_Championship-d4af37?style=for-the-badge)](https://www.dubaichamberdigital.com/en/create-ai-agents)
+[![UAE PDPL DLP](https://img.shields.io/badge/DLP_Shield-UAE_PDPL_Zero--Leakage-10b981?style=for-the-badge)](./core/dlp_shield.py)
+[![Trilingual Voice](https://img.shields.io/badge/Voice-Arabic_(ar--AE)_%7C_English_%7C_Hindi-blueviolet?style=for-the-badge)](./voice_engine.py)
+[![Munder Difflin](https://img.shields.io/badge/2D_Office-WorkOS_%26_Access_Presets-ff69b4?style=for-the-badge)](./office_floor.html)
+
+---
+
+## 🏆 Dubai "Create AI Agents Championship" Edition (`PRIME WorkOS` & `PRIME Access`)
+
+This repository powers our dual-category submission for the **Dubai Chamber of Digital Economy — Create AI Agents Championship**:
+
+1. **🏢 PRIME WorkOS (Category: Best Youth AI Agent & Best Business AI Agent):**
+   - Deploys a 6-agent autonomous SME digital workforce (`Trade & Customs Agent`, `WhatsApp CRM Concierge`, `Procurement Negotiator`, `FinOps & UAE VAT Auditor`, `SecOps & DLP Sentinel`, `DevOps & QA Automator`) observable on the live **2D Virtual AI Office Floor** (`/office`).
+2. **♿ PRIME Access (Category: Best Societal AI Agent):**
+   - A **100% Hands-Free, Zero-GUI Operating System** empowering **People of Determination** (motor-impaired users) to operate complex desktop software, browsers, coding environments, and communications purely by voice in **Emirati Arabic (`ar-AE`)**, **English (`en-US`)**, and **Hindi/Hinglish (`hi-IN`)**.
+3. **🛡️ Zero-Leakage UAE DLP & PII Redaction Shield (`core/dlp_shield.py`):**
+   - Deterministically intercepts and masks **UAE Emirates IDs (`784-YYYY-NNNNNNN-C`)**, **UAE IBANs (`AE...`)**, **+971 Phone Numbers**, Credit Cards, and API Secrets into `<REDACTED:...>` tokens before any external cloud LLM call, with local-only vault re-hydration.
+4. **📄 Championship Documentation & Pitch Kit:**
+   - [Complete Submission & Pitch Kit (Application Answers, 10-Slide Deck, 3-Min Demo Script)](./docs/dubai_championship/DUBAI_CHAMPIONSHIP_PITCH_KIT.md)
+   - [Technical Architecture Blueprint](./docs/dubai_championship/PRIME_AI_CHAMPIONSHIP_BLUEPRINT.md)
+   - [Championship Strategy & Category Analysis](./docs/dubai_championship/CHAMPIONSHIP_STRATEGY_AND_IDEAS.md)
 
 ---
 
@@ -17,7 +33,7 @@
 
 **PRIME AI** is an autonomous, headless, voice-first digital desktop operating intelligence. It gives you 100% complete hands-free dominion over your Windows PC without touching a mouse or keyboard.
 
-From typing code, clicking buttons, controlling browsers, and managing files, to zero-fail WhatsApp messaging, Obsidian Second Brain indexing, and multimodal AI screen vision—Prime handles it in real time while you speak naturally in **Hinglish** or **English**.
+From typing code, clicking buttons, controlling browsers, and managing files, to zero-fail WhatsApp messaging, Obsidian Second Brain indexing, and multimodal AI screen vision—Prime handles it in real time while you speak naturally in **Emirati Arabic**, **Hinglish**, or **English**.
 
 ```
               ██████╗ ██████╗ ██╗███╗   ███╗███████╗     █████╗ ██╗

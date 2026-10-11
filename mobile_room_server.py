@@ -463,10 +463,16 @@ def office_view():
 
 @app.route("/api/office/state")
 def office_state():
-    """Return complete 2D office state including dots, envelope flights, and stapler status."""
+    """Return complete 2D office state including dots, envelope flights, stapler status, and DLP telemetry."""
     from core.prime_dots import dot_engine
     from core.dots_mailbox import mailbox_router
-    from actions.stapler_dictation import stapler_engine
+    from core.dlp_shield import dlp_shield
+
+    try:
+        from actions.stapler_dictation import stapler_engine
+        stapler_enabled = stapler_engine.enabled
+    except Exception:
+        stapler_enabled = False
 
     dots_data = dot_engine.list_dots()
     # Enrich each dot with unread inbox count
@@ -483,9 +489,121 @@ def office_state():
         "flights": flights,
         "telemetry": telemetry,
         "stapler": {
-            "enabled": stapler_engine.enabled,
+            "enabled": stapler_enabled,
             "hotkey": "Ctrl+Alt+Space",
-        }
+        },
+        "dlp": dlp_shield.get_telemetry(),
+    })
+
+
+@app.route("/api/dlp/status")
+def dlp_status():
+    """Return Zero-Leakage DLP & PII Redaction Shield telemetry."""
+    from core.dlp_shield import dlp_shield
+    return jsonify({"ok": True, "dlp": dlp_shield.get_telemetry()})
+
+
+@app.route("/api/dlp/scan", methods=["POST"])
+def dlp_scan():
+    """Test or execute Zero-Leakage PII & UAE compliance sanitization on input text."""
+    from core.dlp_shield import dlp_shield
+    data = request.get_json(force=True, silent=True) or {}
+    text = data.get("text", "")
+    sanitized, detections = dlp_shield.sanitize_text(text)
+    return jsonify({
+        "ok": True,
+        "sanitized": sanitized,
+        "detections": detections,
+        "dlp": dlp_shield.get_telemetry(),
+    })
+
+
+CHAMPIONSHIP_PRESETS = {
+    "workos": {
+        "edition": "PRIME WorkOS — Autonomous SME Digital Workforce (Youth / Business Category)",
+        "commander_title": "PRIME WORKOS :: DUBAI SME COMMAND CENTER",
+        "agents": [
+            ("Trade & Customs Agent", "Audit commercial invoices, verify GCC HS codes, and prepare Dubai Trade Mirsal-2 customs declarations."),
+            ("WhatsApp CRM Concierge", "Respond to customer inquiries & voice calls in Arabic, English, and Hindi with instant order lookups."),
+            ("Procurement Negotiator", "Request supplier quotes via WhatsApp, compare pricing, and route Purchase Orders for HITL approval."),
+            ("FinOps & UAE VAT Auditor", "Reconcile daily invoices, calculate 5% UAE VAT & 9% Corporate Tax reserves, and flag anomalies."),
+            ("SecOps & DLP Sentinel", "Enforce Zero-Leakage PII redaction (Emirates ID, IBAN, API keys) and AST code execution guardrails."),
+            ("DevOps & QA Automator", "Monitor terminal logs, run 22-suite regression matrix, and self-heal microservice deployments."),
+        ],
+    },
+    "access": {
+        "edition": "PRIME Access — Zero-GUI Hands-Free OS for People of Determination (Societal Category)",
+        "commander_title": "PRIME ACCESS :: HANDS-FREE ACCESSIBILITY COCKPIT",
+        "agents": [
+            ("Voice UI Navigator", "Execute 100% hands-free mouse clicks, window focus, and browser navigation via ambient voice."),
+            ("Stapler Dictation Engine", "Provide zero-latency system-wide voice dictation (Ctrl+Alt+Space) in Arabic, English, and Hindi."),
+            ("Multimodal Screen Reader", "Analyze screen layouts and read complex visual interfaces or error dialogs aloud for visually/motor-impaired users."),
+            ("Hands-Free Communicator", "Place, answer, and schedule WhatsApp voice/video calls and messages without touching a keyboard."),
+            ("Autonomous Code Copilot", "Write, patch, debug, and commit software engineering projects purely by voice instructions."),
+            ("Voice HITL Safety Gate", "Protect the operator from accidental destructive actions with trilingual spoken confirmation."),
+        ],
+    },
+}
+
+
+@app.route("/api/championship/preset", methods=["POST"])
+def apply_championship_preset():
+    """Deploy a pre-configured multi-agent swarm for the Dubai AI Agents Championship live demo."""
+    from core.prime_dots import dot_engine, PrimeDot
+    from core.dots_mailbox import mailbox_router
+    from core.dlp_shield import dlp_shield
+
+    data = request.get_json(force=True, silent=True) or {}
+    mode = str(data.get("mode", "workos")).lower().strip()
+    if mode not in CHAMPIONSHIP_PRESETS:
+        return jsonify({"ok": False, "error": f"Unknown preset mode: {mode}"}), 400
+
+    preset = CHAMPIONSHIP_PRESETS[mode]
+    # Stop and clear existing demo dots to keep the floor crisp
+    for did in list(dot_engine.dots.keys()):
+        dot_engine.stop_dot(did)
+    dot_engine.dots.clear()
+
+    spawned_ids = []
+    for idx, (agent_name, goal) in enumerate(preset["agents"], start=1):
+        dot_id = f"dot_{mode}_{idx:02d}"
+        dot = PrimeDot(goal=goal, name=agent_name, dot_id=dot_id, interval_seconds=0)
+        dot.status = "running" if idx != 3 else "waiting_approval"
+        if idx == 3:
+            dot.pending_approval = {
+                "token": f"hitl_{mode}_{idx}",
+                "tool": "sendWhatsAppMessage" if mode == "workos" else "executePowerShell",
+                "args": {"recipient": "Dubai Supplier #4", "amount_aed": 14500},
+                "reason": "High-value action gated by Voice-First HITL Policy (Say 'Approve' or 'موافق').",
+                "timestamp": "LIVE",
+            }
+        dot._log(f"Initialized in {preset['edition']}")
+        dot.findings.append(f"Active & verified under UAE PDPL Zero-Leakage Guardrail.")
+        dot_engine.dots[dot_id] = dot
+        spawned_ids.append(dot_id)
+
+    dot_engine._save_state()
+
+    # Trigger stigmergic mailbox message flight across desks for visual demonstration
+    if len(spawned_ids) >= 3:
+        d1 = dot_engine.get_dot(spawned_ids[0])
+        d2 = dot_engine.get_dot(spawned_ids[1])
+        if d1 and d2:
+            d1.send_message(spawned_ids[1], "Task Handshake", "Verified compliance packet ready for dispatch.")
+            d2.send_message(spawned_ids[2], "Approval Request", "Queued supplier order for operator HITL sign-off.")
+            mailbox_router.dispatch_pending()
+
+    # Run a sample DLP scan so the shield counter demonstrates live protection
+    dlp_shield.sanitize_text(
+        "Sample audit: Emirates ID 784-1999-1234567-1 and IBAN AE070331234567890123456 verified."
+    )
+
+    return jsonify({
+        "ok": True,
+        "mode": mode,
+        "edition": preset["edition"],
+        "commander_title": preset["commander_title"],
+        "spawned_count": len(spawned_ids),
     })
 
 

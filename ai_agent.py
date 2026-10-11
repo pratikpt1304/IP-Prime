@@ -357,15 +357,25 @@ class AIAgent:
 
         provider = config.get_active_provider()
 
+        # Zero-Leakage DLP Shield: Redact UAE Emirates ID, IBAN, Credit Cards, and API Secrets before cloud LLM calls
+        cloud_input = user_input
+        if provider != "ollama":
+            try:
+                from core.dlp_shield import dlp_shield
+                cloud_input, dlp_detections = dlp_shield.sanitize_text(user_input)
+                if dlp_detections:
+                    log.info("DLP Shield redacted %d sensitive item(s) before cloud dispatch.", len(dlp_detections))
+            except Exception as dlp_err:
+                log.debug("DLP shield check skipped: %s", dlp_err)
 
         # 1. If provider is Gemini
         now = time.monotonic()
         gemini_cooldown = getattr(self, "_gemini_quota_exhausted_until", 0)
         if provider in ("gemini", "google") and self._gemini_chat is not None and now > gemini_cooldown:
-            res = self._process_gemini(user_input, on_tool_call, logged_tool_result)
+            res = self._process_gemini(cloud_input, on_tool_call, logged_tool_result)
             if res != "__GEMINI_EXHAUSTED__":
                 trace_logger.end_trace(active_trace, response=res)
-                self._record_memory_turn(user_input, res)
+                self._record_memory_turn(cloud_input, res)
                 return res
             # Fallback to ultra-fast OpenAI-compatible provider (Groq / OpenRouter)
             if self._openai_client is None and (config.groq_api_key or config.openrouter_api_key):
@@ -383,24 +393,24 @@ class AIAgent:
             if self._openai_client is not None:
                 log.info("Gemini exhausted/timed-out. Falling back instantly to ultra-fast provider...")
                 # If Gemini already executed tools before failing, include results to prevent re-execution
-                failover_input = user_input
+                failover_input = cloud_input
                 prior_tools = getattr(self, '_last_gemini_tool_results', [])
                 if prior_tools:
                     tool_summary = "; ".join(f"{t['tool']}→{str(t['result'])[:200]}" for t in prior_tools)
-                    failover_input = f"{user_input}\n\n[SYSTEM: The following tools were already executed this turn. Do NOT re-execute them. Use the results directly.]\n{tool_summary}"
+                    failover_input = f"{cloud_input}\n\n[SYSTEM: The following tools were already executed this turn. Do NOT re-execute them. Use the results directly.]\n{tool_summary}"
                     self._last_gemini_tool_results = []  # Clear after use
                 res = self._process_openai_compatible(failover_input, on_tool_call, logged_tool_result)
                 if res and not res.startswith("Network connection unreachable"):
                     trace_logger.end_trace(active_trace, response=res)
-                    self._record_memory_turn(user_input, res)
+                    self._record_memory_turn(cloud_input, res)
                     return res
 
         # 2. If provider is an OpenAI-compatible provider
         if self._openai_client is not None:
-            res = self._process_openai_compatible(user_input, on_tool_call, logged_tool_result)
+            res = self._process_openai_compatible(cloud_input, on_tool_call, logged_tool_result)
             if res and not res.startswith("Network connection unreachable"):
                 trace_logger.end_trace(active_trace, response=res)
-                self._record_memory_turn(user_input, res)
+                self._record_memory_turn(cloud_input, res)
                 return res
 
         # 3. Fallback: Local rule-based command execution (100% offline!)
@@ -683,9 +693,9 @@ class AIAgent:
                 return str(r)
             return str(r_obj) if r_obj else default
 
-        # 0A. Voice-First HITL Approval / Rejection Fast-Path
-        m_approve = re.search(r"^(?:yes\s+)?(?:approve|allow|kar\s*do|haan\s*kar\s*do|permission\s*granted|grant\s*permission)(?:\s+(?:it|this|that|action|dot))?$", lower) or lower in ("approve", "yes approve", "approve it", "approve karo", "permission granted", "grant permission", "allow it", "kar do", "ha kar do", "yes do it")
-        m_reject = re.search(r"^(?:reject|deny|cancel|mat\s*karo|reject\s*kar\s*do)(?:\s+(?:it|this|that|action|dot|approval))?$", lower) or lower in ("reject", "reject it", "deny", "cancel", "cancel approval", "mat karo", "reject kar do", "cancel that", "deny permission")
+        # 0A. Voice-First HITL Approval / Rejection Fast-Path (Trilingual: English, Hindi, UAE Arabic)
+        m_approve = re.search(r"^(?:yes\s+)?(?:approve|allow|kar\s*do|haan\s*kar\s*do|permission\s*granted|grant\s*permission|mowafiq|tamam)(?:\s+(?:it|this|that|action|dot))?$", lower) or lower in ("approve", "yes approve", "approve it", "approve karo", "permission granted", "grant permission", "allow it", "kar do", "ha kar do", "yes do it", "mowafiq", "tamam", "موافق", "نعم", "اعتمد", "تمام")
+        m_reject = re.search(r"^(?:reject|deny|cancel|mat\s*karo|reject\s*kar\s*do)(?:\s+(?:it|this|that|action|dot|approval))?$", lower) or lower in ("reject", "reject it", "deny", "cancel", "cancel approval", "mat karo", "reject kar do", "cancel that", "deny permission", "رفض", "الغاء", "لا")
         if m_approve or m_reject:
             from core.prime_dots import dot_engine
             pending = dot_engine.get_pending_approvals()

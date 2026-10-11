@@ -299,9 +299,18 @@
   <header>
     <div class="brand">
       <span>⚡ PRIME AI</span>
-      <span class="brand-badge">2D OFFICE FLOOR</span>
+      <span class="brand-badge" id="edition-badge">DUBAI AI CHAMPIONSHIP EDITION</span>
+      <span class="brand-badge" id="dlp-badge" style="border-color:var(--success); color:var(--success); background:rgba(0,255,136,0.12);" title="UAE PDPL Zero-Leakage Guardrail Active">
+        🛡️ DLP SHIELD: <span id="dlp-count">0</span> REDACTED
+      </span>
     </div>
     <div class="controls">
+      <button class="btn" style="border-color:#00f3ff; color:#00f3ff;" onclick="activatePreset('workos')" title="Submission 1: Best Youth / Business AI Agent">
+        <span>🏢 PRIME WorkOS (SME)</span>
+      </button>
+      <button class="btn" style="border-color:#00ff88; color:#00ff88;" onclick="activatePreset('access')" title="Submission 2: Best Societal AI Agent (People of Determination)">
+        <span>♿ PRIME Access (Zero-GUI)</span>
+      </button>
       <button class="btn btn-stapler" id="stapler-btn" onclick="toggleStapler()">
         <span>🎙️ STAPLER DICTATION</span>
         <span id="stapler-state" style="font-size:0.7rem; opacity:0.8;">[OFF]</span>
@@ -400,6 +409,7 @@
     let officeState = { dots: [], flights: [], telemetry: {} };
     let selectedDotId = null;
     let deskLayouts = [];
+    let commanderTitle = "PRIME WORKOS :: AUTONOMOUS COMMAND CENTER";
 
     function resizeCanvas() {
       canvas.width = canvas.parentElement.clientWidth;
@@ -414,7 +424,7 @@
       const cw = canvas.width;
       const ch = canvas.height;
 
-      // Michael / Prime Commander Room at Top Center
+      // Prime Commander Room at Top Center
       const commanderDesk = {
         id: 'commander',
         name: 'Prime Commander',
@@ -479,7 +489,9 @@
 
       ctx.fillStyle = '#00f3ff88';
       ctx.font = '10px "Orbitron", sans-serif';
-      ctx.fillText("MICHAEL / PRIME COMMANDER ROOM", cw / 2 - 120, 58);
+      ctx.textAlign = 'center';
+      ctx.fillText(commanderTitle, cw / 2, 58);
+      ctx.textAlign = 'start';
 
       // 3. Draw Desks & Avatars
       deskLayouts.forEach(desk => {
@@ -620,6 +632,12 @@
           document.getElementById('stapler-btn').style.borderColor = data.stapler.enabled ? '#00ff88' : '#ffb800';
         }
 
+        // Update Zero-Leakage DLP Shield counter
+        if (data.dlp) {
+          const dlpEl = document.getElementById('dlp-count');
+          if (dlpEl) dlpEl.innerText = data.dlp.total_redactions || 0;
+        }
+
         // Refresh drawer if open
         if (selectedDotId) {
           const curDot = (data.dots || []).find(d => d.dot_id === selectedDotId);
@@ -628,6 +646,27 @@
 
       } catch (err) {
         console.error('Failed to poll office state:', err);
+      }
+    }
+
+    async function activatePreset(mode) {
+      try {
+        const resp = await fetch('/api/championship/preset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+        const data = await resp.json();
+        if (data.ok) {
+          commanderTitle = data.commander_title || commanderTitle;
+          const badge = document.getElementById('edition-badge');
+          if (badge) badge.innerText = mode === 'access' ? 'PRIME ACCESS :: SOCIETAL CATEGORY' : 'PRIME WORKOS :: YOUTH / BUSINESS CATEGORY';
+          selectedDotId = null;
+          closeDrawer();
+          await fetchOfficeState();
+        }
+      } catch (err) {
+        console.error('Preset activation error:', err);
       }
     }
 
